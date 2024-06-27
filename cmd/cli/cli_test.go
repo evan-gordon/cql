@@ -23,12 +23,15 @@ import (
 	"io/fs"
 	"os"
 	"path"
+	"path/filepath"
+	"runtime"
+	"strings"
 	"testing"
 
+	"github.com/google/bulk_fhir_tools/testhelpers"
 	"github.com/google/cql/result"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/google/bulk_fhir_tools/testhelpers"
 )
 
 const testBucketName = "bucketName"
@@ -80,12 +83,15 @@ func TestCLI(t *testing.T) {
 			bundleFileName := "test_bundle.json"
 			var bundleFilePath string
 			if tc.fhirBundle != "" {
-				bundleFilePath = path.Join(testDirCfg.FHIRBundleDir, bundleFileName)
+				bundleFilePath = filepath.Join(testDirCfg.FHIRBundleDir, bundleFileName)
+				if runtime.GOOS == "windows" {
+					bundleFilePath = strings.ReplaceAll(bundleFilePath, "\\", "\\\\")
+				}
 			}
 			// Fill test directories with test file content.
-			writeLocalFileWithContent(t, path.Join(testDirCfg.CQLDir, "test_code.cql"), tc.cql)
-			writeLocalFileWithContent(t, path.Join(testDirCfg.FHIRBundleDir, bundleFileName), tc.fhirBundle)
-			writeLocalFileWithContent(t, path.Join(testDirCfg.FHIRTerminologyDir, "terminology.json"), tc.fhirTerminology)
+			writeLocalFileWithContent(t, filepath.Join(testDirCfg.CQLDir, "test_code.cql"), tc.cql)
+			writeLocalFileWithContent(t, filepath.Join(testDirCfg.FHIRBundleDir, bundleFileName), tc.fhirBundle)
+			writeLocalFileWithContent(t, filepath.Join(testDirCfg.FHIRTerminologyDir, "terminology.json"), tc.fhirTerminology)
 			// need to not always create this file
 			writeLocalFileWithContent(t, testDirCfg.FHIRParametersFile, tc.fhirParameters)
 
@@ -495,7 +501,7 @@ func defaultCLIConfig(t *testing.T) cliConfig {
 		CQLDir:             t.TempDir(),
 		FHIRBundleDir:      t.TempDir(),
 		FHIRTerminologyDir: t.TempDir(),
-		FHIRParametersFile: path.Join(t.TempDir(), "parameters.json"),
+		FHIRParametersFile: filepath.Join(t.TempDir(), "parameters.json"),
 		JSONOutputDir:      t.TempDir(),
 	}
 }
