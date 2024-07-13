@@ -4,6 +4,7 @@
 scale</p>
   <p align="center">
     <a href="https://github.com/google/cql/actions/workflows/go_build.yaml?query=branch%3Amain"><img src="https://github.com/google/cql/actions/workflows/go_build.yaml/badge.svg?branch=main" alt="GitHub Actions Build Status"/></a>
+    <a alt="CQL Spec Test Coverage"><img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fevan-gordon%2Fcql%2Fgh-pages%2Fcoverage-reports%2Fspec-coverage.json"/></a>
     <a href="https://godoc.org/github.com/google/cql"><img src="https://godoc.org/github.com/google/cql?status.svg" alt="Go Documentation"/></a>
   </p>
 </p>
