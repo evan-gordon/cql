@@ -68,4 +68,93 @@ jobs:
 
     - name: Spec Test Coverage
       run: |
+            # Output the full report to console.
             go run tests/spectests/cmd/analyzer/analyzer.go
+
+
+  go_spec_test_badge_update:
+    # change later to on merge: github.event.pull_request.merged
+    # Merged onto the default branch.
+    # later to enable for default branch, add: && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    if: github.event_name == 'pull_request'
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+    steps:
+
+    - name: Set up Go 1.22
+      uses: actions/setup-go@v2
+      with:
+        go-version: 1.22
+      id: go
+
+    - name: Check out code
+      uses: actions/checkout@v3
+
+    - name: Get dependencies
+      run: |
+            go mod download
+    - name: Build
+      run: |
+            go build ./...
+
+    - name: Setup Env Variables
+      id: vars
+      # env:
+      #   BADGE_DIR: coverage-reports
+      #   BADGE_PATH: coverage-reports/spec-coverage.json
+      #   BRANCH: gh-pages
+      run: |
+            # Save total test coverage to a variable.
+            SPEC_COVERAGE=$( \
+              go run tests/spectests/cmd/analyzer/analyzer.go \
+              | grep 'Not Skipped' --max-count=1 \
+              | cut -d' ' -f 4 \
+              | tr -d "()"
+            )
+            echo "spec_coverage=$SPEC_COVERAGE" >> "${GITHUB_OUTPUT}"
+
+            # BADGE_DIR="coverage-reports"
+            echo "dir=coverage-reports" >> "${GITHUB_OUTPUT}"
+            # BADGE_PATH="coverage-reports/spec-coverage.json"
+            echo "path=coverage-reports/spec-coverage.json" >> "${GITHUB_OUTPUT}"
+            # BRANCH="gh-pages"
+            echo "branch=gh-pages" >> "${GITHUB_OUTPUT}"
+
+    - name: Check out Github Pages branch
+      uses: actions/checkout@v3
+      with:
+        ref: ${{ steps.vars.outputs.branch }}
+
+    - name: Create destination directory and file
+      #if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+      run: |
+            echo "${{ steps.vars.outputs.branch }}"
+            mkdir -p "${{ steps.vars.outputs.dir }}"
+  
+            # Place SPEC_COVERAGE into json output.
+            JSON_DATA="{\"schemaVersion\":1,\"color\":\"brightgreen\",\"label\":\"CQL Spec Test Coverage\",\"message\":\"${{ steps.vars.outputs.spec_coverage }}\"}"
+            echo $JSON_DATA > ${{ steps.vars.outputs.path }}
+
+    - name: Commit badge data
+      continue-on-error: true
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add "${{ steps.vars.outputs.path }}"
+        git commit -m "Add/Update badge"
+        git pull
+
+    - name: Push badge commit
+      uses: ad-m/github-push-action@40bf560936a8022e68a3c00e7d2abefaf01305a6  # v0.6.0
+      if: ${{ success() }}
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        branch: ${{ steps.vars.outputs.branch }}
+
+    #- name: Update Coverage Badge
+      # GitHub actions: default branch variable
+      # https://stackoverflow.com/questions/64781462/github-actions-default-branch-variable
+      #if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+      #uses: we-cli/coverage-badge-action@main
