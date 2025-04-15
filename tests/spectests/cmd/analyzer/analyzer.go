@@ -72,7 +72,7 @@ func mainWrapper(ctx context.Context, cfg cliConfig) error {
 	if err != nil {
 		return err
 	}
-	log.Println(message)
+	fmt.Println(message)
 
 	return nil
 }
